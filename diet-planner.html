@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>NutriPlan – Diet Planner</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
       --plum:       #5B21B6;
@@ -313,6 +314,22 @@
     }
     .tip-card h4 { font-size: .92rem; font-weight: 600; margin-bottom: .3rem; }
     .tip-card p { font-size: .82rem; color: var(--slate); line-height: 1.55; }
+
+    /* ─── TOAST ─── */
+    #toast {
+      position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(120px);
+      background: var(--ink); color: #fff;
+      padding: 14px 28px; border-radius: 999px;
+      font-size: .88rem; font-weight: 500;
+      box-shadow: 0 8px 32px rgba(0,0,0,.25);
+      z-index: 9999; transition: transform .4s cubic-bezier(.34,1.56,.64,1);
+      display: flex; align-items: center; gap: 10px;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+    #toast.success .toast-icon { color: #10B981; }
+    #toast.error   .toast-icon { color: #EF4444; }
+    #toast.saving  .toast-icon { animation: spin .8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     /* ─── FOOTER ─── */
     footer {
@@ -715,12 +732,68 @@
   </div>
 </section>
 
+<!-- TOAST -->
+<div id="toast">
+  <span class="toast-icon" id="toastIcon">⏳</span>
+  <span id="toastMsg">Saving your profile…</span>
+</div>
+
 <!-- FOOTER -->
 <footer>
   <p>Made with 💜 by <strong>NutriPlan</strong> · College Mini Project · Diet Planner using HTML, CSS & JavaScript</p>
 </footer>
 
 <script>
+  /* ── Supabase client ── */
+  const _supabase = window.supabase.createClient(
+    'https://etiswehehxcuzhpimmlm.supabase.co',
+    'sb_publishable_uRKl8ZduzK7Tq40ZgHrPrw_eni_Lb90'
+  );
+
+  /* ── Toast helper ── */
+  function showToast(msg, type = 'saving') {
+    const t = document.getElementById('toast');
+    const icon = document.getElementById('toastIcon');
+    document.getElementById('toastMsg').textContent = msg;
+    t.className = type;
+    icon.textContent = type === 'success' ? '✅' : type === 'error' ? '❌' : '⏳';
+    t.classList.add('show');
+    if (type !== 'saving') setTimeout(() => t.classList.remove('show'), 3500);
+  }
+
+  /* ── Save profile to Supabase ── */
+  async function saveProfile(data) {
+    showToast('Saving your profile…', 'saving');
+    try {
+      // Sign in anonymously so auth.users gets a UUID
+      let { data: session } = await _supabase.auth.getSession();
+      if (!session?.session) {
+        const { error: signInErr } = await _supabase.auth.signInAnonymously();
+        if (signInErr) throw signInErr;
+      }
+      const { data: { user } } = await _supabase.auth.getUser();
+      if (!user) throw new Error('Could not get user');
+
+      const { error } = await _supabase.from('profiles').upsert({
+        id:             user.id,
+        name:           data.name,
+        age:            data.age,
+        gender:         data.gender,
+        height_cm:      data.height,
+        weight_kg:      data.weight,
+        activity_level: data.activity,
+        goal:           data.goal,
+        updated_at:     new Date().toISOString()
+      }, { onConflict: 'id' });
+
+      if (error) throw error;
+      showToast('Profile saved to Supabase! 🎉', 'success');
+    } catch (err) {
+      console.error('Supabase error:', err);
+      showToast('Could not save: ' + (err.message || 'Unknown error'), 'error');
+    }
+  }
+
   function calculate() {
     const age    = parseFloat(document.getElementById('age').value);
     const gender = document.getElementById('gender').value;
@@ -793,6 +866,9 @@
 
     // Auto-switch diet tab
     showPlan(goal, document.querySelector(`.tab[onclick*="${goal}"]`));
+
+    // Save to Supabase
+    saveProfile({ name, age, gender, height, weight, activity, goal });
   }
 
   function showPlan(goal, btn) {
