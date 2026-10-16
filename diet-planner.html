@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NutriPlan – Diet Planner</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --plum:       #5B21B6;
+      --violet:     #7C3AED;
+      --lavender:   #A78BFA;
+      --mist:       #EDE9FE;
+      --snow:       #FAF9FF;
+      --ink:        #1E1038;
+      --slate:      #6B7280;
+      --white:      #FFFFFF;
+      --gold:       #F59E0B;
+      --green:      #10B981;
+      --radius:     16px;
+      --shadow:     0 8px 32px rgba(91,33,182,.12);
+      --shadow-lg:  0 20px 60px rgba(91,33,182,.18);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--snow);
+      color: var(--ink);
+      overflow-x: hidden;
+    }
+
+    /* ─── NAV ─── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(255,255,255,.85);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--mist);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 5vw; height: 64px;
+    }
+    .nav-logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.45rem; color: var(--plum); letter-spacing: -.3px;
+    }
+    .nav-logo span { color: var(--lavender); }
+    .nav-links { display: flex; gap: 2rem; }
+    .nav-links a {
+      text-decoration: none; font-size: .9rem; font-weight: 500;
+      color: var(--slate); transition: color .2s;
+    }
+    .nav-links a:hover { color: var(--violet); }
+
+    /* ─── HERO ─── */
+    .hero {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #2D0B6B 0%, #5B21B6 50%, #7C3AED 100%);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center; padding: 100px 5vw 60px;
+      position: relative; overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(circle at 70% 30%, rgba(167,139,250,.25) 0%, transparent 60%),
+                  radial-gradient(circle at 20% 80%, rgba(245,158,11,.1) 0%, transparent 50%);
+    }
+    .hero-badge {
+      background: rgba(255,255,255,.15);
+      border: 1px solid rgba(255,255,255,.3);
+      color: #fff; font-size: .8rem; font-weight: 500;
+      padding: 6px 18px; border-radius: 999px; letter-spacing: .5px;
+      margin-bottom: 1.5rem; display: inline-block;
+      animation: fadeDown .7s ease both;
+    }
+    .hero h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.8rem, 7vw, 5rem);
+      color: #fff; line-height: 1.1;
+      margin-bottom: 1.2rem;
+      animation: fadeDown .7s .1s ease both;
+    }
+    .hero h1 em { color: var(--lavender); font-style: normal; }
+    .hero p {
+      font-size: 1.1rem; color: rgba(255,255,255,.75);
+      max-width: 540px; line-height: 1.7;
+      margin-bottom: 2.5rem;
+      animation: fadeDown .7s .2s ease both;
+    }
+    .btn {
+      display: inline-block;
+      padding: 14px 36px; border-radius: 999px;
+      font-size: .95rem; font-weight: 600;
+      cursor: pointer; border: none; transition: all .25s;
+      text-decoration: none;
+    }
+    .btn-white {
+      background: #fff; color: var(--plum);
+      animation: fadeDown .7s .3s ease both;
+    }
+    .btn-white:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,.2); }
+    .btn-violet { background: var(--violet); color: #fff; }
+    .btn-violet:hover { background: var(--plum); transform: translateY(-2px); box-shadow: var(--shadow); }
+    .btn-outline {
+      background: transparent; color: var(--violet);
+      border: 2px solid var(--violet);
+    }
+    .btn-outline:hover { background: var(--violet); color: #fff; }
+
+    .hero-stats {
+      display: flex; gap: 3rem; margin-top: 3.5rem;
+      animation: fadeDown .7s .4s ease both;
+    }
+    .stat { text-align: center; }
+    .stat-num { font-family: 'Playfair Display', serif; font-size: 1.8rem; color: #fff; }
+    .stat-label { font-size: .78rem; color: rgba(255,255,255,.6); letter-spacing: .5px; }
+
+    .scroll-indicator {
+      position: absolute; bottom: 32px; left: 50%; transform: translateX(-50%);
+      animation: bounce 2s infinite;
+    }
+    .scroll-indicator span {
+      display: block; width: 22px; height: 36px;
+      border: 2px solid rgba(255,255,255,.4); border-radius: 12px;
+      position: relative;
+    }
+    .scroll-indicator span::after {
+      content: ''; position: absolute; top: 6px; left: 50%; transform: translateX(-50%);
+      width: 4px; height: 8px; background: rgba(255,255,255,.6); border-radius: 2px;
+      animation: scrollDot 2s infinite;
+    }
+
+    /* ─── SECTIONS ─── */
+    section { padding: 80px 5vw; }
+    .section-label {
+      font-size: .78rem; font-weight: 600; letter-spacing: 1.5px;
+      text-transform: uppercase; color: var(--lavender);
+      margin-bottom: .6rem;
+    }
+    .section-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      color: var(--ink); line-height: 1.2; margin-bottom: 1rem;
+    }
+    .section-sub { color: var(--slate); font-size: 1rem; max-width: 520px; line-height: 1.7; }
+
+    /* ─── FEATURES ─── */
+    .features-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(240px,1fr));
+      gap: 1.5rem; margin-top: 3rem;
+    }
+    .feature-card {
+      background: var(--white); border-radius: var(--radius);
+      padding: 2rem; border: 1px solid var(--mist);
+      transition: all .3s; position: relative; overflow: hidden;
+    }
+    .feature-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, var(--violet), var(--lavender));
+      transform: scaleX(0); transition: transform .3s; transform-origin: left;
+    }
+    .feature-card:hover { transform: translateY(-6px); box-shadow: var(--shadow-lg); }
+    .feature-card:hover::before { transform: scaleX(1); }
+    .feature-icon {
+      width: 52px; height: 52px; border-radius: 14px;
+      background: var(--mist); display: flex; align-items: center;
+      justify-content: center; font-size: 1.5rem; margin-bottom: 1.2rem;
+    }
+    .feature-card h3 { font-size: 1.05rem; font-weight: 600; margin-bottom: .5rem; }
+    .feature-card p { font-size: .88rem; color: var(--slate); line-height: 1.6; }
+
+    /* ─── CALCULATOR FORM ─── */
+    #calculator { background: var(--mist); }
+    .calc-wrapper {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 3rem;
+      align-items: start; margin-top: 3rem;
+    }
+    .form-card {
+      background: var(--white); border-radius: 20px;
+      padding: 2.5rem; box-shadow: var(--shadow);
+    }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
+    .field { display: flex; flex-direction: column; gap: .4rem; }
+    .field.full { grid-column: span 2; }
+    label { font-size: .82rem; font-weight: 600; color: var(--ink); letter-spacing: .3px; }
+    input, select {
+      padding: 12px 14px; border-radius: 10px;
+      border: 1.5px solid #E5E7EB; font-size: .92rem;
+      font-family: 'DM Sans', sans-serif; color: var(--ink);
+      background: var(--snow); transition: border-color .2s, box-shadow .2s;
+    }
+    input:focus, select:focus {
+      outline: none; border-color: var(--violet);
+      box-shadow: 0 0 0 3px rgba(124,58,237,.12);
+    }
+    .calc-btn {
+      width: 100%; margin-top: 1.5rem; padding: 14px;
+      border-radius: 10px; border: none; cursor: pointer;
+      background: linear-gradient(135deg, var(--plum), var(--violet));
+      color: #fff; font-size: .98rem; font-weight: 600;
+      font-family: 'DM Sans', sans-serif;
+      transition: all .25s;
+    }
+    .calc-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(91,33,182,.35); }
+
+    /* ─── RESULT PANEL ─── */
+    .result-panel {
+      background: var(--white); border-radius: 20px;
+      padding: 2.5rem; box-shadow: var(--shadow);
+      display: none;
+    }
+    .result-panel.show { display: block; animation: fadeUp .5s ease; }
+    .result-header { text-align: center; margin-bottom: 2rem; }
+    .calorie-circle {
+      width: 150px; height: 150px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--plum), var(--violet));
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      margin: 0 auto 1rem; box-shadow: 0 12px 40px rgba(91,33,182,.35);
+    }
+    .calorie-circle .num {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.2rem; color: #fff; line-height: 1;
+    }
+    .calorie-circle .unit { font-size: .75rem; color: rgba(255,255,255,.7); }
+    .result-title { font-family: 'Playfair Display', serif; font-size: 1.2rem; color: var(--ink); }
+    .result-sub { font-size: .85rem; color: var(--slate); margin-top: .3rem; }
+
+    .bmi-bar-wrap { margin: 1.5rem 0; }
+    .bmi-bar-label { display: flex; justify-content: space-between; font-size: .8rem; margin-bottom: .4rem; }
+    .bmi-bar { height: 10px; border-radius: 999px; background: #E5E7EB; overflow: hidden; }
+    .bmi-fill { height: 100%; border-radius: 999px; transition: width 1s ease; }
+
+    .macro-row { display: flex; gap: .8rem; margin-top: 1rem; }
+    .macro-chip {
+      flex: 1; text-align: center; padding: 10px 6px;
+      border-radius: 10px; background: var(--mist);
+    }
+    .macro-chip .mval { font-weight: 700; font-size: 1rem; color: var(--plum); }
+    .macro-chip .mlbl { font-size: .72rem; color: var(--slate); }
+
+    /* ─── DIET PLAN ─── */
+    #diet-plan { background: var(--white); }
+    .goals-tabs { display: flex; gap: 1rem; flex-wrap: wrap; margin: 2rem 0 1.5rem; }
+    .tab {
+      padding: 10px 26px; border-radius: 999px;
+      border: 2px solid var(--mist); background: var(--mist);
+      font-size: .88rem; font-weight: 600; cursor: pointer;
+      color: var(--slate); transition: all .2s;
+    }
+    .tab.active { background: var(--violet); border-color: var(--violet); color: #fff; }
+    .tab:hover:not(.active) { border-color: var(--lavender); color: var(--violet); }
+
+    .plan-grid { display: none; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap: 1.2rem; }
+    .plan-grid.show { display: grid; animation: fadeUp .4s ease; }
+    .meal-card {
+      border: 1.5px solid var(--mist); border-radius: 14px;
+      padding: 1.4rem; transition: all .25s;
+    }
+    .meal-card:hover { border-color: var(--lavender); box-shadow: var(--shadow); transform: translateY(-4px); }
+    .meal-time {
+      font-size: .72rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 1px; color: var(--violet); margin-bottom: .5rem;
+    }
+    .meal-card h4 { font-size: .95rem; font-weight: 600; margin-bottom: .5rem; }
+    .meal-card ul { list-style: none; }
+    .meal-card ul li {
+      font-size: .83rem; color: var(--slate); padding: 3px 0;
+      padding-left: 14px; position: relative;
+    }
+    .meal-card ul li::before {
+      content: '•'; position: absolute; left: 0; color: var(--lavender);
+    }
+    .meal-cal { font-size: .78rem; font-weight: 600; color: var(--gold); margin-top: .6rem; }
+
+    /* ─── WEEKLY TABLE ─── */
+    #weekly { background: var(--mist); }
+    .table-scroll { overflow-x: auto; margin-top: 2rem; border-radius: 16px; box-shadow: var(--shadow); }
+    table {
+      width: 100%; border-collapse: collapse;
+      background: var(--white); min-width: 700px;
+    }
+    thead { background: linear-gradient(135deg, var(--plum), var(--violet)); }
+    thead th {
+      color: #fff; font-size: .8rem; font-weight: 600;
+      letter-spacing: .5px; text-transform: uppercase;
+      padding: 14px 16px; text-align: left;
+    }
+    tbody tr { border-bottom: 1px solid var(--mist); transition: background .2s; }
+    tbody tr:hover { background: var(--mist); }
+    tbody td { padding: 12px 16px; font-size: .85rem; color: var(--ink); }
+    tbody td:first-child { font-weight: 600; color: var(--violet); }
+
+    /* ─── TIPS ─── */
+    #tips { background: var(--white); }
+    .tips-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(260px,1fr));
+      gap: 1.5rem; margin-top: 2.5rem;
+    }
+    .tip-card {
+      display: flex; gap: 1rem; padding: 1.4rem;
+      border: 1.5px solid var(--mist); border-radius: 14px;
+      transition: all .25s;
+    }
+    .tip-card:hover { border-color: var(--lavender); transform: translateY(-3px); box-shadow: var(--shadow); }
+    .tip-icon {
+      width: 44px; height: 44px; min-width: 44px; border-radius: 12px;
+      background: var(--mist); display: flex; align-items: center;
+      justify-content: center; font-size: 1.2rem;
+    }
+    .tip-card h4 { font-size: .92rem; font-weight: 600; margin-bottom: .3rem; }
+    .tip-card p { font-size: .82rem; color: var(--slate); line-height: 1.55; }
+
+    /* ─── FOOTER ─── */
+    footer {
+      background: var(--ink); color: rgba(255,255,255,.5);
+      text-align: center; padding: 2rem 5vw;
+      font-size: .82rem;
+    }
+    footer strong { color: var(--lavender); }
+
+    /* ─── ANIMATIONS ─── */
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes bounce {
+      0%,100% { transform: translateX(-50%) translateY(0); }
+      50%      { transform: translateX(-50%) translateY(-10px); }
+    }
+    @keyframes scrollDot {
+      0%   { opacity: 1; transform: translateX(-50%) translateY(0); }
+      100% { opacity: 0; transform: translateX(-50%) translateY(14px); }
+    }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 768px) {
+      .calc-wrapper { grid-template-columns: 1fr; }
+      .form-grid { grid-template-columns: 1fr; }
+      .field.full { grid-column: span 1; }
+      .hero-stats { gap: 1.8rem; }
+      .nav-links { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">Nutri<span>Plan</span></div>
+  <div class="nav-links">
+    <a href="#calculator">Calculator</a>
+    <a href="#diet-plan">Diet Plan</a>
+    <a href="#weekly">Weekly</a>
+    <a href="#tips">Tips</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-badge">🌿 Your Personal Diet Companion</div>
+  <h1>Eat Smart.<br/><em>Live Healthy.</em></h1>
+  <p>Discover your ideal calorie intake, explore Indian diet plans tailored to your goals, and build habits that last a lifetime.</p>
+  <a href="#calculator" class="btn btn-white">Get My Plan →</a>
+  <div class="hero-stats">
+    <div class="stat">
+      <div class="stat-num">3+</div>
+      <div class="stat-label">Goal Plans</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">7</div>
+      <div class="stat-label">Day Planner</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">100%</div>
+      <div class="stat-label">Indian Food</div>
+    </div>
+  </div>
+  <div class="scroll-indicator"><span></span></div>
+</section>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="section-label">Why NutriPlan</div>
+  <div class="section-title">Everything you need<br/>to eat well.</div>
+  <div class="section-sub">A simple, science-backed tool to help students and individuals plan balanced, nutritious Indian meals.</div>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">🔢</div>
+      <h3>Calorie Calculator</h3>
+      <p>Get your personalised daily calorie target based on age, weight, height, and activity level.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🥗</div>
+      <h3>Indian Diet Plans</h3>
+      <p>Meal plans with roti, dal, rice, paneer, sabzi and more — foods you already love.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📅</div>
+      <h3>7-Day Planner</h3>
+      <p>A structured weekly table so you know exactly what to eat every day of the week.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">⚖️</div>
+      <h3>BMI Tracker</h3>
+      <p>Instantly see your Body Mass Index and understand where you stand on the health scale.</p>
+    </div>
+  </div>
+</section>
+
+<!-- CALCULATOR -->
+<section id="calculator">
+  <div class="section-label">Step 1</div>
+  <div class="section-title">Your Details</div>
+  <div class="section-sub">Fill in your information and we'll calculate your ideal daily calorie intake instantly.</div>
+  <div class="calc-wrapper">
+    <div class="form-card">
+      <div class="form-grid">
+        <div class="field full">
+          <label for="name">Name</label>
+          <input type="text" id="name" name="name" placeholder="Enter your name" autocomplete="name" />
+        </div>
+        <div class="field">
+          <label for="age">Age (years)</label>
+          <input type="number" id="age" placeholder="e.g. 21" min="10" max="100" />
+        </div>
+        <div class="field">
+          <label for="gender">Gender</label>
+          <select id="gender">
+            <option value="">Select</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="height">Height (cm)</label>
+          <input type="number" id="height" placeholder="e.g. 170" min="100" max="250" />
+        </div>
+        <div class="field">
+          <label for="weight">Weight (kg)</label>
+          <input type="number" id="weight" placeholder="e.g. 65" min="20" max="200" />
+        </div>
+        <div class="field">
+          <label for="activity">Activity Level</label>
+          <select id="activity">
+            <option value="1.2">Sedentary (no exercise)</option>
+            <option value="1.375">Light (1-3 days/week)</option>
+            <option value="1.55" selected>Moderate (3-5 days/week)</option>
+            <option value="1.725">Active (6-7 days/week)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="goal">Fitness Goal</label>
+          <select id="goal">
+            <option value="loss">Weight Loss</option>
+            <option value="maintain">Maintain Weight</option>
+            <option value="gain">Weight Gain</option>
+          </select>
+        </div>
+      </div>
+      <button class="calc-btn" onclick="calculate()">Calculate My Plan ✨</button>
+    </div>
+
+    <!-- RESULT -->
+    <div class="result-panel" id="resultPanel">
+      <div class="result-header">
+        <div class="calorie-circle">
+          <div class="num" id="calResult">—</div>
+          <div class="unit">kcal / day</div>
+        </div>
+        <div class="result-title" id="goalLabel">Your Daily Target</div>
+        <div class="result-sub" id="goalSub">Based on your profile</div>
+      </div>
+
+      <div class="bmi-bar-wrap">
+        <div class="bmi-bar-label">
+          <span style="font-size:.8rem;font-weight:600;color:var(--ink)">BMI: <span id="bmiVal">—</span></span>
+          <span id="bmiCat" style="font-size:.8rem;font-weight:600;color:var(--violet)">—</span>
+        </div>
+        <div class="bmi-bar"><div class="bmi-fill" id="bmiFill" style="width:0%;background:var(--violet)"></div></div>
+        <div style="display:flex;justify-content:space-between;font-size:.7rem;color:var(--slate);margin-top:.3rem">
+          <span>Underweight</span><span>Normal</span><span>Overweight</span><span>Obese</span>
+        </div>
+      </div>
+
+      <div class="macro-row">
+        <div class="macro-chip">
+          <div class="mval" id="mCarb">—g</div>
+          <div class="mlbl">Carbs</div>
+        </div>
+        <div class="macro-chip">
+          <div class="mval" id="mProt">—g</div>
+          <div class="mlbl">Protein</div>
+        </div>
+        <div class="macro-chip">
+          <div class="mval" id="mFat">—g</div>
+          <div class="mlbl">Fat</div>
+        </div>
+      </div>
+
+      <div style="margin-top:1.5rem;text-align:center">
+        <a href="#diet-plan" class="btn btn-violet" style="font-size:.88rem;padding:12px 28px">View Diet Plan →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DIET PLAN -->
+<section id="diet-plan">
+  <div class="section-label">Step 2</div>
+  <div class="section-title">Your Indian Diet Plan</div>
+  <div class="section-sub">Choose your goal below to see a curated Indian meal plan for the day.</div>
+  <div class="goals-tabs">
+    <button class="tab active" onclick="showPlan('loss',this)">🔥 Weight Loss</button>
+    <button class="tab" onclick="showPlan('maintain',this)">⚖️ Maintain</button>
+    <button class="tab" onclick="showPlan('gain',this)">💪 Weight Gain</button>
+  </div>
+
+  <!-- WEIGHT LOSS -->
+  <div class="plan-grid show" id="plan-loss">
+    <div class="meal-card">
+      <div class="meal-time">Early Morning</div>
+      <h4>Wake-Up Ritual</h4>
+      <ul><li>Warm lemon water (1 glass)</li><li>Soaked methi seeds</li><li>5 almonds</li></ul>
+      <div class="meal-cal">~50 kcal</div>
+    </div>
+    <div class="meal-card">
+      <div class="meal-time">Breakfast</div>
+      <h4>Light Start</h4>
+      <ul><li>2 moong dal chilla</li><li>Cucumber raita (small)</li><li>Green tea</li></ul>
+      <div class="meal-cal">~280 kcal</div>
+    </div>
+    <div class="meal-card">
+      <div class="meal-time">Mid Morning</div>
+      <h4>Snack</h4>
+      <ul><li>1 fruit (apple/guava)</li><li>Buttermilk (chaas)</li></ul>
+      <div class="meal-cal">~120 kcal</div>
+    </div>
+    <div class="meal-card">
+      <div class="meal-time">Lunch</div>
+      <h4>Balanced Plate</h4>
+      <ul><li>1 roti (whole wheat)</li><li>Dal tadka (1 katori)</li><li>Mix vegetable sabzi</li><li>Salad</li></ul>
+      <div class="meal-cal">~420 kcal</div>
+    </div>
+    <div class="meal-card">
+      <div class="meal-time">Evening</div>
+      <h4>Light Snack</h4>
+      <ul><li>Roasted chana (handful)</li><li>Herbal tea</li></ul>
+      <div class="meal-cal">~130 kcal</div>
+    </div>
+    <div class="meal-card">
+      <div class="meal-time">Dinner</div>
+      <h4>Light Dinner</h4>
+      <ul><li>Vegetable soup</li><li>1 roti</li><li>Palak sabzi</li><li>Curd (small)</li></ul>
+      <div class="meal-cal">~360 kcal</div>
+    </div>
+  </div>
+
+  <!-- MAINTAIN -->
+  <div class="plan-grid" id="plan-maintain">
+    <div class="meal-card">
+      <div class="meal-time">Early Morning</div>
+      <h4>Morning Boost</h4>
+      <ul><li>1 glass milk or green tea</li><li>2 walnuts + 4 almonds</li></ul>
+      <div class="meal-cal">~150 kcal</div>
+    </div>
+    <div class="meal-card">
+      <div class="meal-time">Breakfast</div>
+      <h4>Energy Starter</h4>
+      <ul><li>2 whole wheat parathas</li><li>Curd (1 bowl)</li><li>Pickle / chutney</li></ul>
+      <div class="meal-cal">~450 kcal</div>
+    </div>
+    <div class="meal-card">
+      <div class="meal-time">Mid Morning</div>
+      <h4>Snack</h4>
+      <ul><li>1 banana or seasonal fruit</li><li>Chaas or coconut water</li></ul>
+      <div class="meal-cal">~150 kcal</div>
+    </div>
+    <div class="meal-card">
+      <div class="meal-time">Lunch</div>
+      <h4>Full Meal</h4>
+      <ul><li>2 rotis</li><li>Rice (small)</li><li>Dal + sabzi</li><li>Salad + curd</li></ul>
+      <div class="meal-cal">~580 kcal</div>
+    </div>
+    <div class="meal-card">
+      <div class="meal-time">Evening</div>
+      <h4>Tea Time</h4>
+      <ul><li>Chai (low sugar)</li><li>2 marie biscuits or poha</li></ul>
+      <div class="meal-cal">~180 kcal</div>
+    </div>
+    <div class="meal-card">
+      <div class="meal-time">Dinner</div>
+      <h4>Balanced Dinner</h4>
+      <ul><li>2 rotis</li><li>Paneer sabzi or dal</li><li>Salad</li></ul>
+      <div class="meal-cal">~490 kcal</div>
+    </div>
+  </div>
+
+  <!-- GAIN -->
+  <div class="plan-grid" id="plan-gain">
+    <div class="meal-card">
+      <div class="meal-time">Early Morning</div>
+      <h4>Calorie Kickstart</h4>
+      <ul><li>Banana milkshake (1 glass)</li><li>8-10 soaked almonds</li></ul>
+      <div class="meal-cal">~320 kcal</div>
+    </div>
+    <div class="meal-card">
+      <div class="meal-time">Breakfast</div>
+      <h4>Power Breakfast</h4>
+      <ul><li>3-4 parathas with ghee</li><li>Paneer bhurji</li><li>Full cream curd</li></ul>
+      <div class="meal-cal">~680 kcal</div>
+    </div>
+    <div class="meal-card">
+      <div class="meal-time">Mid Morning</div>
+      <h4>Protein Snack</h4>
+      <ul><li>Peanut butter toast (2 slices)</li><li>1 glass whole milk</li></ul>
+      <div class="meal-cal">~380 kcal</div>
+    </div>
+    <div class="meal-card">
+      <div class="meal-time">Lunch</div>
+      <h4>Heavy Lunch</h4>
+      <ul><li>3 rotis with ghee</li><li>Rice (1 bowl)</li><li>Rajma / chana</li><li>Paneer sabzi + curd</li></ul>
+      <div class="meal-cal">~820 kcal</div>
+    </div>
+    <div class="meal-card">
+      <div class="meal-time">Evening</div>
+      <h4>Boost Snack</h4>
+      <ul><li>Dry fruits mix</li><li>Banana + peanut butter</li><li>Protein lassi</li></ul>
+      <div class="meal-cal">~450 kcal</div>
+    </div>
+    <div class="meal-card">
+      <div class="meal-time">Dinner</div>
+      <h4>Hearty Dinner</h4>
+      <ul><li>3 rotis with ghee</li><li>Dal makhani</li><li>Paneer / egg curry</li><li>Rice (small)</li></ul>
+      <div class="meal-cal">~750 kcal</div>
+    </div>
+  </div>
+</section>
+
+<!-- WEEKLY -->
+<section id="weekly">
+  <div class="section-label">Step 3</div>
+  <div class="section-title">7-Day Weekly Planner</div>
+  <div class="section-sub">A structured week of balanced Indian meals to keep you on track.</div>
+  <div class="table-scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>Day</th>
+          <th>Breakfast</th>
+          <th>Lunch</th>
+          <th>Snack</th>
+          <th>Dinner</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Monday</td><td>Poha + Chai</td><td>Dal + 2 Rotis + Sabzi</td><td>Chaas + Fruit</td><td>Khichdi + Curd</td></tr>
+        <tr><td>Tuesday</td><td>Upma + Green Tea</td><td>Rajma + Rice + Salad</td><td>Roasted Chana</td><td>2 Rotis + Palak Paneer</td></tr>
+        <tr><td>Wednesday</td><td>Moong Dal Chilla</td><td>Chole + Roti + Raita</td><td>Banana + Milk</td><td>Vegetable Soup + Roti</td></tr>
+        <tr><td>Thursday</td><td>Idli (3) + Sambar</td><td>Mixed Dal + Rice + Sabzi</td><td>Sprouts Salad</td><td>2 Rotis + Bhindi Sabzi</td></tr>
+        <tr><td>Friday</td><td>Paratha + Curd</td><td>Aloo Matar + Roti + Dal</td><td>Dry Fruits Mix</td><td>Dalia + Sabzi</td></tr>
+        <tr><td>Saturday</td><td>Dosa + Chutney</td><td>Paneer Butter Masala + Rice</td><td>Fruit Chaat</td><td>Roti + Lauki Sabzi + Dal</td></tr>
+        <tr><td>Sunday</td><td>Besan Chilla + Raita</td><td>Rajma Rice + Salad</td><td>Roasted Makhana</td><td>Khichdi + Ghee + Pickle</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- TIPS -->
+<section id="tips">
+  <div class="section-label">Bonus</div>
+  <div class="section-title">Tips for Healthy Living</div>
+  <div class="section-sub">Simple habits that make a big difference in your health journey.</div>
+  <div class="tips-grid">
+    <div class="tip-card">
+      <div class="tip-icon">💧</div>
+      <div><h4>Stay Hydrated</h4><p>Drink 8–10 glasses of water daily. Start your morning with warm water and lemon.</p></div>
+    </div>
+    <div class="tip-card">
+      <div class="tip-icon">🌙</div>
+      <div><h4>Don't Skip Dinner</h4><p>Eat a light dinner at least 2 hours before sleeping to aid digestion and sleep quality.</p></div>
+    </div>
+    <div class="tip-card">
+      <div class="tip-icon">🥦</div>
+      <div><h4>Eat More Vegetables</h4><p>Include at least 2–3 servings of seasonal vegetables in your daily meals.</p></div>
+    </div>
+    <div class="tip-card">
+      <div class="tip-icon">🚶</div>
+      <div><h4>Walk Daily</h4><p>A 30-minute brisk walk after meals boosts metabolism and helps maintain a healthy weight.</p></div>
+    </div>
+    <div class="tip-card">
+      <div class="tip-icon">🍽️</div>
+      <div><h4>Eat Mindfully</h4><p>Chew slowly, avoid screens while eating, and stop when 80% full to prevent overeating.</p></div>
+    </div>
+    <div class="tip-card">
+      <div class="tip-icon">🧘</div>
+      <div><h4>Manage Stress</h4><p>Stress increases cortisol and triggers emotional eating. Practice yoga or deep breathing daily.</p></div>
+    </div>
+    <div class="tip-card">
+      <div class="tip-icon">😴</div>
+      <div><h4>Sleep 7–8 Hours</h4><p>Poor sleep disrupts hunger hormones. Consistent, quality sleep is essential for weight management.</p></div>
+    </div>
+    <div class="tip-card">
+      <div class="tip-icon">🚫</div>
+      <div><h4>Reduce Junk Food</h4><p>Limit processed foods, packaged snacks, and sugary drinks. Replace with whole foods like fruits and nuts.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <p>Made with 💜 by <strong>NutriPlan</strong> · College Mini Project · Diet Planner using HTML, CSS & JavaScript</p>
+</footer>
+
+<script>
+  function calculate() {
+    const age    = parseFloat(document.getElementById('age').value);
+    const gender = document.getElementById('gender').value;
+    const height = parseFloat(document.getElementById('height').value);
+    const weight = parseFloat(document.getElementById('weight').value);
+    const activity = parseFloat(document.getElementById('activity').value);
+    const goal   = document.getElementById('goal').value;
+
+    if (!age || !gender || !height || !weight) {
+      alert('Please fill in all fields!');
+      return;
+    }
+
+    // BMR (Mifflin-St Jeor)
+    let bmr;
+    if (gender === 'male') {
+      bmr = 10 * weight + 6.25 * height - 5 * age + 5;
+    } else {
+      bmr = 10 * weight + 6.25 * height - 5 * age - 161;
+    }
+
+    let tdee = bmr * activity;
+    let finalCal = tdee;
+    let goalLabel = '', goalSub = '';
+
+    if (goal === 'loss') {
+      finalCal = tdee - 400;
+      goalLabel = '🔥 Weight Loss Target';
+      goalSub = '400 kcal deficit applied for safe fat loss';
+    } else if (goal === 'gain') {
+      finalCal = tdee + 400;
+      goalLabel = '💪 Weight Gain Target';
+      goalSub = '400 kcal surplus applied for muscle gain';
+    } else {
+      goalLabel = '⚖️ Maintenance Target';
+      goalSub = 'Calories to maintain your current weight';
+    }
+
+    finalCal = Math.round(finalCal);
+
+    // Macros
+    const carb = Math.round((finalCal * 0.50) / 4);
+    const prot = Math.round((finalCal * 0.25) / 4);
+    const fat  = Math.round((finalCal * 0.25) / 9);
+
+    // BMI
+    const bmi = (weight / ((height / 100) ** 2)).toFixed(1);
+    let bmiCat = '', bmiColor = '', bmiPct = 0;
+    if (bmi < 18.5) { bmiCat = 'Underweight'; bmiColor = '#60A5FA'; bmiPct = 15; }
+    else if (bmi < 25) { bmiCat = 'Normal'; bmiColor = '#10B981'; bmiPct = 40; }
+    else if (bmi < 30) { bmiCat = 'Overweight'; bmiColor = '#F59E0B'; bmiPct = 70; }
+    else { bmiCat = 'Obese'; bmiColor = '#EF4444'; bmiPct = 90; }
+
+    document.getElementById('calResult').textContent  = finalCal;
+    document.getElementById('goalLabel').textContent  = goalLabel;
+    document.getElementById('goalSub').textContent    = goalSub;
+    document.getElementById('bmiVal').textContent     = bmi;
+    document.getElementById('bmiCat').textContent     = bmiCat;
+    document.getElementById('bmiCat').style.color     = bmiColor;
+    document.getElementById('bmiFill').style.width    = bmiPct + '%';
+    document.getElementById('bmiFill').style.background = bmiColor;
+    document.getElementById('mCarb').textContent      = carb + 'g';
+    document.getElementById('mProt').textContent      = prot + 'g';
+    document.getElementById('mFat').textContent       = fat + 'g';
+
+    const panel = document.getElementById('resultPanel');
+    panel.classList.add('show');
+    panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    // Auto-switch diet tab
+    showPlan(goal, document.querySelector(`.tab[onclick*="${goal}"]`));
+  }
+
+  function showPlan(goal, btn) {
+    document.querySelectorAll('.plan-grid').forEach(g => g.classList.remove('show'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('plan-' + goal).classList.add('show');
+    if (btn) btn.classList.add('active');
+  }
+</script>
+</body>
+</html>
